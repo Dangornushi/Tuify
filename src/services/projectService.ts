@@ -122,8 +122,9 @@ export const updateProject = async (
   data: Partial<Project>
 ): Promise<void> => {
   const projectRef = doc(db, COLLECTION_NAME, projectId);
+  const cleanedData = removeUndefined(data);
   await updateDoc(projectRef, {
-    ...data,
+    ...cleanedData,
     updatedAt: serverTimestamp(),
   });
 };
