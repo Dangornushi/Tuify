@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Terminal, ArrowRight, Code, Layout, Download } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 
 export const HomePage = () => {
+  const { isAuthenticated } = useAuthStore();
+
   return (
     <div className="min-h-screen bg-terminal-bg">
       {/* Hero Section */}
@@ -29,9 +32,11 @@ export const HomePage = () => {
               <span>Start Designing</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link to="/register" className="btn-secondary flex items-center justify-center gap-2">
-              <span>Create Account</span>
-            </Link>
+            {!isAuthenticated && (
+              <Link to="/register" className="btn-secondary flex items-center justify-center gap-2">
+                <span>Create Account</span>
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -96,8 +101,9 @@ export const HomePage = () => {
             Ready to build your TUI?
           </h2>
           <p className="text-terminal-text-dim mb-8">
-            No account required to start designing.
-            Sign up to save and manage your projects.
+            {isAuthenticated
+              ? 'Start designing and save your projects.'
+              : 'No account required to start designing. Sign up to save and manage your projects.'}
           </p>
           <Link to="/editor" className="btn-primary inline-flex items-center gap-2">
             <span>Open Editor</span>
