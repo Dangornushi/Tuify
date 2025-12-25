@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.5;
+    font-weight: 400;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    @apply bg-terminal-bg text-terminal-text;
+  }
+}
+
+@layer components {
+  /* TUI風のボーダースタイル */
+  .tui-border {
+    @apply border border-terminal-border;
+  }
+
+  .tui-border-plain {
+    @apply border border-terminal-text/30;
+  }
+
+  .tui-border-rounded {
+    @apply border border-terminal-text/30 rounded-lg;
+  }
+
+  .tui-border-double {
+    border-style: double;
+    border-width: 4px;
+    @apply border-terminal-text/30;
+  }
+
+  /* ボタンスタイル */
+  .btn-primary {
+    @apply bg-terminal-accent text-terminal-bg font-semibold px-4 py-2 rounded
+           hover:bg-terminal-accent-hover transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-terminal-accent/50;
+  }
+
+  .btn-secondary {
+    @apply bg-terminal-bg-secondary text-terminal-text border border-terminal-border
+           px-4 py-2 rounded hover:bg-terminal-border transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-terminal-accent/50;
+  }
+
+  /* 入力フィールドスタイル */
+  .input-field {
+    @apply w-full bg-terminal-bg-secondary text-terminal-text
+           border border-terminal-border rounded px-3 py-2
+           focus:outline-none focus:border-terminal-accent
+           placeholder:text-terminal-text-dim;
+  }
+
+  /* カードスタイル */
+  .card {
+    @apply bg-terminal-bg-secondary border border-terminal-border rounded-lg p-4;
+  }
+
+  /* エディタノードスタイル */
+  .editor-node {
+    @apply border border-dashed border-terminal-border/50
+           hover:border-terminal-accent transition-colors duration-200;
+  }
+
+  .editor-node-selected {
+    @apply border-terminal-accent border-solid;
+  }
+}
+
+/* スクロールバーのカスタマイズ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-terminal-bg;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-terminal-border rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-terminal-text-dim;
+}
