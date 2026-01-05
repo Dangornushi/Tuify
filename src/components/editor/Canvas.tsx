@@ -1,11 +1,11 @@
-import { DndContext, DragEndEvent, DragOverlay, pointerWithin, DragStartEvent } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragOverlay, DragOverEvent, pointerWithin, DragStartEvent } from '@dnd-kit/core';
 import { useState } from 'react';
 import { useEditorStore } from '../../store/editorStore';
 import { EditorNode } from './EditorNode';
 import { LayoutNode } from '../../types/models';
 
 export const Canvas = () => {
-  const { rootId, nodes, moveNode, selectNode } = useEditorStore();
+  const { rootId, nodes, moveNode, selectNode, setDropTarget } = useEditorStore();
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -13,9 +13,37 @@ export const Canvas = () => {
     setActiveId(nodeId);
   };
 
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+
+    if (!over) {
+      setDropTarget(null);
+      return;
+    }
+
+    const draggedNodeId = (active.data.current as { nodeId: string })?.nodeId;
+    const overId = (over.data.current as { nodeId: string })?.nodeId;
+
+    // 自分自身の上にいる場合はドロップターゲットをクリア
+    if (!overId || draggedNodeId === overId) {
+      setDropTarget(null);
+      return;
+    }
+
+    // ドロップ先がLayoutの場合、その子要素として追加される
+    // ドロップ先がWidget/非ルートLayoutの場合、入れ替え対象としてハイライト
+    const overNode = nodes[overId];
+    if (overNode) {
+      setDropTarget(overId);
+    } else {
+      setDropTarget(null);
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
+    setDropTarget(null); // ドラッグ終了時にドロップターゲットをクリア
 
     if (!over) return;
 
@@ -42,6 +70,7 @@ export const Canvas = () => {
     <DndContext
       collisionDetection={pointerWithin}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div

@@ -20,9 +20,11 @@ interface EditorState {
   rootId: string;
   selectedId: string | null;
   isDirty: boolean;
+  dropTargetId: string | null; // ドラッグ中の入れ替え先要素ID
 
   // Actions
   selectNode: (nodeId: string | null) => void;
+  setDropTarget: (nodeId: string | null) => void;
   addNode: (
     parentId: string,
     node: Omit<LayoutNode, 'id'> | Omit<WidgetNode, 'id'>
@@ -68,11 +70,18 @@ export const useEditorStore = create(
     ...createInitialState(),
     selectedId: null,
     isDirty: false,
+    dropTargetId: null,
 
     // ノード選択
     selectNode: (nodeId) =>
       set((state) => {
         state.selectedId = nodeId;
+      }),
+
+    // ドロップターゲット設定
+    setDropTarget: (nodeId) =>
+      set((state) => {
+        state.dropTargetId = nodeId;
       }),
 
     /**
@@ -392,6 +401,7 @@ export const useEditorStore = create(
         state.rootId = designData.rootId;
         state.selectedId = null;
         state.isDirty = false;
+        state.dropTargetId = null;
       }),
 
     // エディタリセット
@@ -402,13 +412,17 @@ export const useEditorStore = create(
         state.rootId = initial.rootId;
         state.selectedId = null;
         state.isDirty = false;
+        state.dropTargetId = null;
       }),
 
-    // 現在のデザインデータを取得
-    getDesignData: () => ({
-      rootId: get().rootId,
-      nodes: get().nodes,
-    }),
+    // 現在のデザインデータを取得（Proxyを解除するためディープコピー）
+    getDesignData: () => {
+      const state = get();
+      return JSON.parse(JSON.stringify({
+        rootId: state.rootId,
+        nodes: state.nodes,
+      }));
+    },
 
     // isDirtyフラグを設定
     setDirty: (dirty) =>

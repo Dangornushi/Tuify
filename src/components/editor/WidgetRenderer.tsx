@@ -1,4 +1,4 @@
-import { useDraggable } from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { WidgetNode } from '../../types/models';
 import { useEditorStore } from '../../store/editorStore';
 import { getBorderStyle } from '../../utils/constraints';
@@ -27,10 +27,19 @@ const getWidgetIcon = (widgetType: string) => {
 
 export const WidgetRenderer = ({ node }: WidgetRendererProps) => {
   const { id, widgetType, data } = node;
-  const { selectedId, selectNode } = useEditorStore();
+  const { selectedId, selectNode, dropTargetId } = useEditorStore();
   const isSelected = selectedId === id;
+  const isDropTarget = dropTargetId === id;
 
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  const { setNodeRef: setDroppableRef } = useDroppable({
+    id: `droppable-widget-${id}`,
+    data: {
+      type: 'widget',
+      nodeId: id,
+    },
+  });
+
+  const { attributes, listeners, setNodeRef: setDraggableRef, isDragging } = useDraggable({
     id: `draggable-${id}`,
     data: {
       type: 'widget',
@@ -45,19 +54,26 @@ export const WidgetRenderer = ({ node }: WidgetRendererProps) => {
 
   const borderStyle = getBorderStyle(data.borderStyle, data.borderColor);
 
+  // 両方のrefを1つの要素に適用
+  const setRefs = (element: HTMLDivElement | null) => {
+    setDroppableRef(element);
+    setDraggableRef(element);
+  };
+
   return (
     <div
-      ref={setNodeRef}
+      ref={setRefs}
       onClick={handleClick}
       className={`
         w-full h-full p-2 font-mono text-sm
         editor-node
         ${isSelected ? 'editor-node-selected' : ''}
+        ${isDropTarget ? 'ring-2 ring-terminal-accent bg-terminal-accent/20' : ''}
         ${isDragging ? 'opacity-50' : ''}
       `}
       style={{
         ...borderStyle,
-        backgroundColor: data.backgroundColor || 'transparent',
+        backgroundColor: isDropTarget ? undefined : (data.backgroundColor || 'transparent'),
         color: data.textColor || '#e8e8e8',
       }}
     >

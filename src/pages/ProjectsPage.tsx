@@ -10,6 +10,7 @@ export const ProjectsPage = () => {
     projects,
     isLoading,
     hasMore,
+    isAuthenticated,
     fetchProjects,
     fetchMore,
     loadProject,
@@ -22,10 +23,12 @@ export const ProjectsPage = () => {
   // Infinite scroll ref
   const loadMoreRef = useInfiniteScroll(fetchMore, hasMore, isLoading);
 
-  // Fetch projects on mount
+  // Fetch projects when authenticated
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    if (isAuthenticated) {
+      fetchProjects();
+    }
+  }, [isAuthenticated, fetchProjects]);
 
   const handleOpenProject = async (projectId: string) => {
     await loadProject(projectId);

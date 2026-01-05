@@ -16,7 +16,26 @@ export const useAuth = () => {
       if (firebaseUser) {
         // ログイン状態: Firestoreからユーザー情報取得
         try {
-          const userData = await userService.getUser(firebaseUser.uid);
+          let userData = await userService.getUser(firebaseUser.uid);
+
+          // Firestoreにユーザードキュメントがない場合は作成
+          if (!userData) {
+            const randomSuffix = Math.random()
+              .toString(36)
+              .substring(2, 6)
+              .toUpperCase();
+            const generatedDisplayName = `User_${randomSuffix}`;
+
+            await userService.createUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              displayName: generatedDisplayName,
+              avatarUrl: '',
+            });
+
+            userData = await userService.getUser(firebaseUser.uid);
+          }
+
           setUser(userData);
         } catch (error) {
           console.error('ユーザー情報の取得に失敗しました:', error);

@@ -14,7 +14,7 @@ import { generateRustCode } from '../utils/codeGenerator';
 export const EditorPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuthStore();
   const { isDirty, getDesignData, resetEditor } = useEditorStore();
   const {
     currentProjectId,
@@ -94,6 +94,11 @@ export const EditorPage = () => {
   }, [currentProjectTitle]);
 
   const handleSave = async () => {
+    // 認証状態の確認中は何もしない
+    if (isAuthLoading) {
+      return;
+    }
+
     if (!isAuthenticated) {
       navigate('/login', { state: { from: { pathname: '/editor' } } });
       return;
@@ -122,6 +127,11 @@ export const EditorPage = () => {
   };
 
   const handleSaveWithTitle = async () => {
+    // 認証状態の確認中は何もしない
+    if (isAuthLoading) {
+      return;
+    }
+
     if (!projectTitle.trim()) {
       setSaveError('Project name is required');
       return;
@@ -208,10 +218,10 @@ export const EditorPage = () => {
           </button>
           <button
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || isAuthLoading}
             className="btn-primary flex items-center gap-1 text-sm"
           >
-            {isSaving ? (
+            {isSaving || isAuthLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Save className="w-4 h-4" />
@@ -278,7 +288,7 @@ export const EditorPage = () => {
               Save Project
             </h2>
 
-            {!isAuthenticated && (
+            {!isAuthenticated && !isAuthLoading && (
               <div className="mb-4 p-3 bg-terminal-warning/10 border border-terminal-warning rounded flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-terminal-warning flex-shrink-0" />
                 <p className="text-terminal-warning text-sm">
@@ -315,13 +325,13 @@ export const EditorPage = () => {
               >
                 Cancel
               </button>
-              {isAuthenticated ? (
+              {isAuthenticated || isAuthLoading ? (
                 <button
                   onClick={handleSaveWithTitle}
-                  disabled={isSaving}
+                  disabled={isSaving || isAuthLoading}
                   className="btn-primary flex items-center gap-1"
                 >
-                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {(isSaving || isAuthLoading) && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>Save</span>
                 </button>
               ) : (

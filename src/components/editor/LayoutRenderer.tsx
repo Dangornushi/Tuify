@@ -93,11 +93,12 @@ const Resizer = ({ parentId, index, direction }: ResizerProps) => {
 
 export const LayoutRenderer = ({ node }: LayoutRendererProps) => {
   const { direction, children, constraints, id } = node;
-  const { selectedId, selectNode } = useEditorStore();
+  const { selectedId, selectNode, nodes, dropTargetId } = useEditorStore();
   const isSelected = selectedId === id;
   const isRoot = useEditorStore((state) => state.rootId === id);
+  const isDropTarget = dropTargetId === id;
 
-  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+  const { setNodeRef: setDroppableRef } = useDroppable({
     id: `droppable-${id}`,
     data: {
       type: 'layout',
@@ -127,7 +128,7 @@ export const LayoutRenderer = ({ node }: LayoutRendererProps) => {
         w-full h-full
         ${isRoot ? '' : 'editor-node'}
         ${isSelected ? 'editor-node-selected' : ''}
-        ${isOver ? 'bg-terminal-accent/10' : ''}
+        ${isDropTarget ? 'ring-2 ring-terminal-accent bg-terminal-accent/20' : ''}
         ${isDragging ? 'opacity-50' : ''}
         transition-colors duration-200
       `}
@@ -150,7 +151,7 @@ export const LayoutRenderer = ({ node }: LayoutRendererProps) => {
 
       {children.length === 0 ? (
         <div className="flex items-center justify-center w-full h-full min-h-[60px] text-terminal-text-dim text-sm">
-          {isOver ? (
+          {isDropTarget ? (
             <span className="text-terminal-accent">Drop here</span>
           ) : (
             <span>Empty Layout</span>
@@ -162,10 +163,25 @@ export const LayoutRenderer = ({ node }: LayoutRendererProps) => {
           const style = constraint
             ? getFlexStyle(direction, constraint)
             : { flex: 1 };
+          const childNode = nodes[childId];
+
+          // 子ノードを囲むdivのクリックハンドラ
+          // 子がLayoutの場合、このdivをクリックした時に子ノードを選択する
+          const handleChildContainerClick = (e: React.MouseEvent) => {
+            // 子ノードがLayoutの場合のみ、クリックを捕捉して子を選択
+            if (childNode?.type === 'Layout') {
+              e.stopPropagation();
+              selectNode(childId);
+            }
+          };
 
           return (
             <div key={childId} className="contents">
-              <div style={style} className="relative overflow-hidden">
+              <div
+                style={style}
+                className="relative overflow-hidden"
+                onClick={handleChildContainerClick}
+              >
                 <EditorNode nodeId={childId} />
               </div>
               {index < children.length - 1 && (

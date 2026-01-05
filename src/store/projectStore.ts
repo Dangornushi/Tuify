@@ -77,7 +77,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
     const user = getUser();
     if (!user) {
-      throw new Error('ログインが必要です');
+      // 認証状態がまだ確定していない場合は何もしない（IntersectionObserverが早期発火した場合など）
+      return;
     }
 
     const lastProject = projects[projects.length - 1];
