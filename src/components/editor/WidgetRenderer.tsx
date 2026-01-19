@@ -8,6 +8,38 @@ interface WidgetRendererProps {
   node: WidgetNode;
 }
 
+interface InputPreviewProps {
+  label?: string;
+  placeholder?: string;
+  borderStyle?: string;
+  borderColor?: string;
+  multiline?: boolean;
+}
+
+const InputPreview = ({ label, placeholder, multiline }: InputPreviewProps) => {
+  const displayPlaceholder = placeholder || 'Enter text...';
+
+  return (
+    <div className="relative">
+      {/* Label on border */}
+      {label && (
+        <span
+          className="absolute -top-[1.1em] left-1 px-1 text-xs bg-terminal-bg-secondary text-terminal-warning"
+        >
+          {label}
+        </span>
+      )}
+      {/* Content */}
+      <div className={`text-sm text-terminal-text-dim ${multiline ? 'min-h-[60px]' : ''}`}>
+        {displayPlaceholder}
+        {multiline && (
+          <span className="block text-xs text-terminal-accent mt-1">(multiline)</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const getWidgetIcon = (widgetType: string) => {
   switch (widgetType) {
     case 'Paragraph':
@@ -82,7 +114,7 @@ export const WidgetRenderer = ({ node }: WidgetRendererProps) => {
         <div
           {...listeners}
           {...attributes}
-          className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-terminal-border rounded"
+          className="relative z-30 cursor-grab active:cursor-grabbing p-0.5 hover:bg-terminal-border rounded"
         >
           <GripVertical className="w-3 h-3" />
         </div>
@@ -146,19 +178,13 @@ export const WidgetRenderer = ({ node }: WidgetRendererProps) => {
         )}
 
         {widgetType === 'Input' && (
-          <div className="space-y-1">
-            {data.label && (
-              <label className="block text-xs text-terminal-text-dim">
-                {data.label}
-              </label>
-            )}
-            <div className="flex items-center bg-terminal-bg border border-terminal-border rounded px-2 py-1">
-              <span className="text-terminal-text-dim text-sm flex-1">
-                {data.placeholder || 'Enter text...'}
-              </span>
-              <span className="text-terminal-accent animate-pulse">|</span>
-            </div>
-          </div>
+          <InputPreview
+            label={data.label}
+            placeholder={data.placeholder}
+            borderStyle={data.borderStyle}
+            borderColor={data.borderColor}
+            multiline={data.multiline}
+          />
         )}
       </div>
     </div>

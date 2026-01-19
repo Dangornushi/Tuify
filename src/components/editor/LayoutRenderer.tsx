@@ -1,10 +1,11 @@
 import { useDroppable, useDraggable } from '@dnd-kit/core';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { GripVertical } from 'lucide-react';
 import { LayoutNode } from '../../types/models';
 import { useEditorStore } from '../../store/editorStore';
 import { EditorNode } from './EditorNode';
 import { getFlexStyle } from '../../utils/constraints';
+import { useResizeHandler } from '../../hooks/useResizeHandler';
 
 interface LayoutRendererProps {
   node: LayoutNode;
@@ -18,62 +19,29 @@ interface ResizerProps {
 
 const Resizer = ({ parentId, index, direction }: ResizerProps) => {
   const { resizeConstraints } = useEditorStore();
-  const [isResizing, setIsResizing] = useState(false);
-  const startPosRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsResizing(true);
-    startPosRef.current = direction === 'Vertical' ? e.clientY : e.clientX;
-  };
-
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isResizing) return;
-
-      const currentPos = direction === 'Vertical' ? e.clientY : e.clientX;
-      const diff = currentPos - startPosRef.current;
-
+  const handleResize = useCallback(
+    (delta: number) => {
       // ピクセル差をパーセンテージに変換（親要素のサイズに基づく）
       const parent = containerRef.current?.parentElement?.parentElement;
       if (parent) {
         const parentSize =
           direction === 'Vertical' ? parent.clientHeight : parent.clientWidth;
-        const deltaPercent = (diff / parentSize) * 100;
+        const deltaPercent = (delta / parentSize) * 100;
 
         if (Math.abs(deltaPercent) > 0.5) {
           resizeConstraints(parentId, index, deltaPercent);
-          startPosRef.current = currentPos;
         }
       }
     },
-    [isResizing, direction, parentId, index, resizeConstraints]
+    [direction, parentId, index, resizeConstraints]
   );
 
-  const handleMouseUp = useCallback(() => {
-    setIsResizing(false);
-  }, []);
-
-  useEffect(() => {
-    if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = direction === 'Vertical' ? 'row-resize' : 'col-resize';
-      document.body.style.userSelect = 'none';
-    } else {
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [isResizing, handleMouseMove, handleMouseUp, direction]);
+  const { isResizing, startResize } = useResizeHandler({
+    direction: direction === 'Vertical' ? 'vertical' : 'horizontal',
+    onResize: handleResize,
+  });
 
   const isVertical = direction === 'Vertical';
 
@@ -86,7 +54,7 @@ const Resizer = ({ parentId, index, direction }: ResizerProps) => {
         ${isResizing ? 'bg-terminal-accent' : 'bg-terminal-border hover:bg-terminal-accent'}
         transition-colors
       `}
-      onMouseDown={handleMouseDown}
+      onMouseDown={startResize}
     />
   );
 };

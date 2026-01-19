@@ -10,6 +10,7 @@ import { useAuthStore } from '../store/authStore';
 import { useProject } from '../hooks/useProject';
 import { exportProjectAsZip, downloadRustCode } from '../utils/zipExport';
 import { generateRustCode } from '../utils/codeGenerator';
+import { useResizeHandler } from '../hooks/useResizeHandler';
 
 export const EditorPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -34,49 +35,39 @@ export const EditorPage = () => {
   // Panel resizing state
   const [leftPanelWidth, setLeftPanelWidth] = useState(256); // 16rem = 256px
   const [rightPanelWidth, setRightPanelWidth] = useState(288); // 18rem = 288px
-  const [isResizingLeft, setIsResizingLeft] = useState(false);
-  const [isResizingRight, setIsResizingRight] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Handle mouse move for resizing
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!containerRef.current) return;
-    const containerRect = containerRef.current.getBoundingClientRect();
-
-    if (isResizingLeft) {
-      const newWidth = e.clientX - containerRect.left;
+  // Left panel resize handler
+  const handleLeftResize = useCallback(
+    (_delta: number, currentPos: number) => {
+      if (!containerRef.current) return;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newWidth = currentPos - containerRect.left;
       setLeftPanelWidth(Math.max(150, Math.min(400, newWidth)));
-    } else if (isResizingRight) {
-      const newWidth = containerRect.right - e.clientX;
+    },
+    []
+  );
+
+  // Right panel resize handler
+  const handleRightResize = useCallback(
+    (_delta: number, currentPos: number) => {
+      if (!containerRef.current) return;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newWidth = containerRect.right - currentPos;
       setRightPanelWidth(Math.max(200, Math.min(500, newWidth)));
-    }
-  }, [isResizingLeft, isResizingRight]);
+    },
+    []
+  );
 
-  // Handle mouse up to stop resizing
-  const handleMouseUp = useCallback(() => {
-    setIsResizingLeft(false);
-    setIsResizingRight(false);
-  }, []);
+  const { isResizing: isResizingLeft, startResize: startLeftResize } = useResizeHandler({
+    direction: 'horizontal',
+    onResize: handleLeftResize,
+  });
 
-  // Add/remove event listeners for resizing
-  useEffect(() => {
-    if (isResizingLeft || isResizingRight) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-    } else {
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [isResizingLeft, isResizingRight, handleMouseMove, handleMouseUp]);
+  const { isResizing: isResizingRight, startResize: startRightResize } = useResizeHandler({
+    direction: 'horizontal',
+    onResize: handleRightResize,
+  });
 
   // Load project if projectId is provided
   useEffect(() => {
@@ -249,7 +240,7 @@ export const EditorPage = () => {
           className={`w-1.5 flex-shrink-0 cursor-col-resize flex items-center justify-center group transition-colors ${
             isResizingLeft ? 'bg-terminal-accent' : 'bg-terminal-border hover:bg-terminal-accent'
           }`}
-          onMouseDown={() => setIsResizingLeft(true)}
+          onMouseDown={startLeftResize}
         >
           <GripVertical className={`w-3 h-3 transition-opacity ${
             isResizingLeft ? 'text-terminal-accent opacity-100' : 'text-terminal-text-dim group-hover:text-terminal-accent opacity-0 group-hover:opacity-100'
@@ -264,7 +255,7 @@ export const EditorPage = () => {
           className={`w-1.5 flex-shrink-0 cursor-col-resize flex items-center justify-center group transition-colors ${
             isResizingRight ? 'bg-terminal-accent' : 'bg-terminal-border hover:bg-terminal-accent'
           }`}
-          onMouseDown={() => setIsResizingRight(true)}
+          onMouseDown={startRightResize}
         >
           <GripVertical className={`w-3 h-3 transition-opacity ${
             isResizingRight ? 'text-terminal-accent opacity-100' : 'text-terminal-text-dim group-hover:text-terminal-accent opacity-0 group-hover:opacity-100'

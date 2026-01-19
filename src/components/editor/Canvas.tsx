@@ -5,7 +5,7 @@ import { EditorNode } from './EditorNode';
 import { LayoutNode } from '../../types/models';
 
 export const Canvas = () => {
-  const { rootId, nodes, moveNode, selectNode, setDropTarget } = useEditorStore();
+  const { rootId, nodes, moveNode, swapNodes, selectNode, setDropTarget } = useEditorStore();
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -52,11 +52,19 @@ export const Canvas = () => {
 
     if (!draggedNodeId || !overId || draggedNodeId === overId) return;
 
-    // Check if over is a Layout
     const overNode = nodes[overId];
-    if (overNode?.type === 'Layout') {
+    const draggedNode = nodes[draggedNodeId];
+
+    if (!overNode || !draggedNode) return;
+
+    // ドロップ先がルートLayoutの場合、末尾に追加
+    if (overNode.type === 'Layout' && overId === rootId) {
       const layoutNode = overNode as LayoutNode;
       moveNode(draggedNodeId, overId, layoutNode.children.length);
+    }
+    // ドロップ先がWidget、またはルート以外のLayoutの場合、入れ替え
+    else {
+      swapNodes(draggedNodeId, overId);
     }
   };
 

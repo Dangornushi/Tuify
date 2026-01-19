@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Loader2, AlertCircle } from 'lucide-react';
 import { loginSchema, LoginInput } from '../../validation/schemas';
 import { useAuthActions } from '../../hooks/useAuth';
 import { AppError } from '../../utils/errorHandler';
+import { AuthFormField } from './AuthFormField';
+import { AuthErrorAlert } from './AuthErrorAlert';
+import { AuthSubmitButton } from './AuthSubmitButton';
 
 export const LoginForm = () => {
   const navigate = useNavigate();
@@ -40,70 +42,32 @@ export const LoginForm = () => {
         Login
       </h1>
 
-      {serverError && (
-        <div className="mb-4 p-3 bg-terminal-error/10 border border-terminal-error rounded flex items-center gap-2">
-          <AlertCircle className="w-5 h-5 text-terminal-error flex-shrink-0" />
-          <p className="text-terminal-error text-sm">{serverError}</p>
-        </div>
-      )}
+      <AuthErrorAlert message={serverError} />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm text-terminal-text-dim mb-1"
-          >
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            {...register('email')}
-            className="input-field"
-            placeholder="your@email.com"
-          />
-          {errors.email && (
-            <p className="text-terminal-error text-sm mt-1">
-              {errors.email.message}
-            </p>
-          )}
-        </div>
+        <AuthFormField
+          id="email"
+          label="Email"
+          type="email"
+          placeholder="your@email.com"
+          registration={register('email')}
+          error={errors.email}
+        />
 
-        <div>
-          <label
-            htmlFor="password"
-            className="block text-sm text-terminal-text-dim mb-1"
-          >
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            {...register('password')}
-            className="input-field"
-            placeholder="********"
-          />
-          {errors.password && (
-            <p className="text-terminal-error text-sm mt-1">
-              {errors.password.message}
-            </p>
-          )}
-        </div>
+        <AuthFormField
+          id="password"
+          label="Password"
+          type="password"
+          placeholder="********"
+          registration={register('password')}
+          error={errors.password}
+        />
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full btn-primary flex items-center justify-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Logging in...</span>
-            </>
-          ) : (
-            <span>Login</span>
-          )}
-        </button>
+        <AuthSubmitButton
+          isSubmitting={isSubmitting}
+          label="Login"
+          loadingLabel="Logging in..."
+        />
       </form>
 
       <p className="mt-4 text-center text-terminal-text-dim text-sm">

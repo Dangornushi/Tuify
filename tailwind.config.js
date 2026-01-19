@@ -11,18 +11,23 @@ export default {
         mono: ['JetBrains Mono', 'Roboto Mono', 'monospace'],
       },
       colors: {
-        // TUI用のカラーパレット（xterm-256風）
+        // Kanagawa-dragon Theme カラーパレット
         terminal: {
-          bg: '#1a1a2e',
-          'bg-secondary': '#16213e',
-          border: '#0f3460',
-          text: '#e8e8e8',
-          'text-dim': '#a0a0a0',
-          accent: '#c8ff00',
-          'accent-hover': '#a8d900',
-          error: '#ff6b6b',
-          success: '#51cf66',
-          warning: '#ffd43b',
+          bg: '#181616',           // dragonBlack3 - メイン背景
+          'bg-secondary': '#1d1c19', // dragonBlack4 - セカンダリ背景
+          border: '#282727',       // dragonBlack5 - ボーダー
+          text: '#c5c9c5',         // dragonWhite - メインテキスト
+          'text-dim': '#a6a69c',   // dragonGray2 - 薄いテキスト
+          accent: '#8ba4b0',       // dragonBlue - アクセント
+          'accent-hover': '#9cabce', // dragonBlue2 - アクセントホバー
+          error: '#c4746e',        // dragonRed - エラー
+          success: '#87a987',      // dragonGreen - 成功
+          warning: '#c4b28a',      // dragonYellow - 警告
+          // 追加カラー
+          purple: '#8992a7',       // dragonViolet
+          orange: '#b6927b',       // dragonOrange
+          pink: '#a292a3',         // dragonPink
+          aqua: '#8ea4a2',         // dragonAqua
         },
       },
     },

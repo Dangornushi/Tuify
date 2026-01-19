@@ -68,6 +68,7 @@ export interface WidgetData {
   // Input用
   placeholder?: string;
   label?: string;
+  multiline?: boolean;
 }
 
 // ボーダースタイル

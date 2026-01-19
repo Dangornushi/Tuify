@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, AlertCircle } from 'lucide-react';
 import { registerSchema, RegisterInput } from '../../validation/schemas';
 import { useAuthActions } from '../../hooks/useAuth';
 import { AppError } from '../../utils/errorHandler';
+import { AuthFormField } from './AuthFormField';
+import { AuthErrorAlert } from './AuthErrorAlert';
+import { AuthSubmitButton } from './AuthSubmitButton';
 
 export const RegisterForm = () => {
   const navigate = useNavigate();
@@ -37,94 +39,42 @@ export const RegisterForm = () => {
         Create Account
       </h1>
 
-      {serverError && (
-        <div className="mb-4 p-3 bg-terminal-error/10 border border-terminal-error rounded flex items-center gap-2">
-          <AlertCircle className="w-5 h-5 text-terminal-error flex-shrink-0" />
-          <p className="text-terminal-error text-sm">{serverError}</p>
-        </div>
-      )}
+      <AuthErrorAlert message={serverError} />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm text-terminal-text-dim mb-1"
-          >
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            {...register('email')}
-            className="input-field"
-            placeholder="your@email.com"
-          />
-          {errors.email && (
-            <p className="text-terminal-error text-sm mt-1">
-              {errors.email.message}
-            </p>
-          )}
-        </div>
+        <AuthFormField
+          id="email"
+          label="Email"
+          type="email"
+          placeholder="your@email.com"
+          registration={register('email')}
+          error={errors.email}
+        />
 
-        <div>
-          <label
-            htmlFor="password"
-            className="block text-sm text-terminal-text-dim mb-1"
-          >
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            {...register('password')}
-            className="input-field"
-            placeholder="********"
-          />
-          {errors.password && (
-            <p className="text-terminal-error text-sm mt-1">
-              {errors.password.message}
-            </p>
-          )}
-          <p className="text-terminal-text-dim text-xs mt-1">
-            8 characters minimum, must include letters and numbers
-          </p>
-        </div>
+        <AuthFormField
+          id="password"
+          label="Password"
+          type="password"
+          placeholder="********"
+          registration={register('password')}
+          error={errors.password}
+          hint="8 characters minimum, must include letters and numbers"
+        />
 
-        <div>
-          <label
-            htmlFor="confirmPassword"
-            className="block text-sm text-terminal-text-dim mb-1"
-          >
-            Confirm Password
-          </label>
-          <input
-            id="confirmPassword"
-            type="password"
-            {...register('confirmPassword')}
-            className="input-field"
-            placeholder="********"
-          />
-          {errors.confirmPassword && (
-            <p className="text-terminal-error text-sm mt-1">
-              {errors.confirmPassword.message}
-            </p>
-          )}
-        </div>
+        <AuthFormField
+          id="confirmPassword"
+          label="Confirm Password"
+          type="password"
+          placeholder="********"
+          registration={register('confirmPassword')}
+          error={errors.confirmPassword}
+        />
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full btn-primary flex items-center justify-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Creating account...</span>
-            </>
-          ) : (
-            <span>Sign Up</span>
-          )}
-        </button>
+        <AuthSubmitButton
+          isSubmitting={isSubmitting}
+          label="Sign Up"
+          loadingLabel="Creating account..."
+        />
       </form>
 
       <p className="mt-4 text-center text-terminal-text-dim text-sm">

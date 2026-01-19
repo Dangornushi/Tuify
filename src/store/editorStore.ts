@@ -10,6 +10,37 @@ import {
 } from '../types/models';
 import { v4 as uuidv4 } from 'uuid';
 
+/**
+ * Constraintsを比例拡大して合計100%にする共通関数
+ * deleteNodeとmoveNodeで共通利用
+ */
+const redistributeConstraints = (constraints: Constraint[]): Constraint[] => {
+  const remainingTotal = constraints.reduce(
+    (sum, c) => sum + (c.type === 'Percentage' ? c.value : 0),
+    0
+  );
+
+  if (remainingTotal <= 0) {
+    return constraints;
+  }
+
+  const expandRatio = 100 / remainingTotal;
+  let accumulated = 0;
+
+  return constraints.map((c, idx) => {
+    if (c.type === 'Percentage') {
+      if (idx === constraints.length - 1) {
+        // 最後の要素で端数調整
+        return { ...c, value: 100 - accumulated };
+      }
+      const newValue = Math.round(c.value * expandRatio);
+      accumulated += newValue;
+      return { ...c, value: newValue };
+    }
+    return c;
+  });
+};
+
 // ノードプロパティ更新用の型定義
 type LayoutNodeProps = Partial<Pick<LayoutNode, 'direction' | 'constraints'>>;
 type WidgetNodeProps = Partial<WidgetData>;
@@ -42,6 +73,7 @@ interface EditorState {
   ) => void;
   deleteNode: (nodeId: string) => void;
   moveNode: (nodeId: string, newParentId: string, index: number) => void;
+  swapNodes: (nodeId1: string, nodeId2: string) => void;
   loadDesignData: (designData: DesignTree) => void;
   resetEditor: () => void;
   getDesignData: () => DesignTree;
@@ -232,29 +264,7 @@ export const useEditorStore = create(
 
               // 残りの子ノードに削除された分を比例配分
               if (layoutNode.children.length > 0 && deletedValue > 0) {
-                const remainingTotal = layoutNode.constraints.reduce(
-                  (sum, c) => sum + (c.type === 'Percentage' ? c.value : 0),
-                  0
-                );
-
-                if (remainingTotal > 0) {
-                  // 比例拡大して合計100%にする
-                  const expandRatio = 100 / remainingTotal;
-                  let accumulated = 0;
-
-                  layoutNode.constraints = layoutNode.constraints.map((c, idx) => {
-                    if (c.type === 'Percentage') {
-                      if (idx === layoutNode.constraints.length - 1) {
-                        // 最後の要素で端数調整
-                        return { ...c, value: 100 - accumulated };
-                      }
-                      const newValue = Math.round(c.value * expandRatio);
-                      accumulated += newValue;
-                      return { ...c, value: newValue };
-                    }
-                    return c;
-                  });
-                }
+                layoutNode.constraints = redistributeConstraints(layoutNode.constraints);
               }
             }
           }
@@ -313,27 +323,7 @@ export const useEditorStore = create(
 
               // 残りの子ノードに削除された分を比例配分
               if (layoutNode.children.length > 0) {
-                const remainingTotal = layoutNode.constraints.reduce(
-                  (sum, c) => sum + (c.type === 'Percentage' ? c.value : 0),
-                  0
-                );
-
-                if (remainingTotal > 0) {
-                  const expandRatio = 100 / remainingTotal;
-                  let accumulated = 0;
-
-                  layoutNode.constraints = layoutNode.constraints.map((c, idx) => {
-                    if (c.type === 'Percentage') {
-                      if (idx === layoutNode.constraints.length - 1) {
-                        return { ...c, value: 100 - accumulated };
-                      }
-                      const newValue = Math.round(c.value * expandRatio);
-                      accumulated += newValue;
-                      return { ...c, value: newValue };
-                    }
-                    return c;
-                  });
-                }
+                layoutNode.constraints = redistributeConstraints(layoutNode.constraints);
               }
             }
           }
@@ -389,6 +379,82 @@ export const useEditorStore = create(
 
             newParent.constraints = newConstraints;
           }
+        }
+
+        state.isDirty = true;
+      }),
+
+    /**
+     * ノード入れ替え（ドラッグ＆ドロップで位置を交換）
+     * 2つのノードの位置を入れ替える
+     */
+    swapNodes: (nodeId1, nodeId2) =>
+      set((state) => {
+        // ルートノードは入れ替え不可
+        if (nodeId1 === state.rootId || nodeId2 === state.rootId) {
+          console.warn('ルートノードは入れ替えできません');
+          return;
+        }
+
+        // 親子関係のチェック（一方が他方の直接の親である場合は入れ替え不可）
+        const node1 = state.nodes[nodeId1];
+        const node2 = state.nodes[nodeId2];
+        if (node1?.type === 'Layout') {
+          const layout1 = node1 as LayoutNode;
+          if (layout1.children.includes(nodeId2)) {
+            console.warn('親子関係にあるノードは入れ替えできません');
+            return;
+          }
+        }
+        if (node2?.type === 'Layout') {
+          const layout2 = node2 as LayoutNode;
+          if (layout2.children.includes(nodeId1)) {
+            console.warn('親子関係にあるノードは入れ替えできません');
+            return;
+          }
+        }
+
+        // 各ノードの親とインデックスを検索
+        let parent1Id: string | null = null;
+        let index1 = -1;
+        let parent2Id: string | null = null;
+        let index2 = -1;
+
+        Object.values(state.nodes).forEach((node) => {
+          if (node.type === 'Layout') {
+            const layoutNode = node as LayoutNode;
+            const idx1 = layoutNode.children.indexOf(nodeId1);
+            const idx2 = layoutNode.children.indexOf(nodeId2);
+            if (idx1 > -1) {
+              parent1Id = layoutNode.id;
+              index1 = idx1;
+            }
+            if (idx2 > -1) {
+              parent2Id = layoutNode.id;
+              index2 = idx2;
+            }
+          }
+        });
+
+        if (!parent1Id || !parent2Id || index1 === -1 || index2 === -1) {
+          console.warn('入れ替え対象のノードが見つかりません');
+          return;
+        }
+
+        const parent1 = state.nodes[parent1Id] as LayoutNode;
+        const parent2 = state.nodes[parent2Id] as LayoutNode;
+
+        // 同じ親内での入れ替え
+        if (parent1Id === parent2Id) {
+          // children配列内で位置を入れ替え（constraintsは維持して幅を固定）
+          const temp = parent1.children[index1];
+          parent1.children[index1] = parent1.children[index2];
+          parent1.children[index2] = temp;
+        } else {
+          // 異なる親間での入れ替え（childrenのみ入れ替え、constraintsは維持）
+          parent1.children[index1] = nodeId2;
+          parent2.children[index2] = nodeId1;
+          // constraintsは入れ替えない（各親の合計100%を維持）
         }
 
         state.isDirty = true;

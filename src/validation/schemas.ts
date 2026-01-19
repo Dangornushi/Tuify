@@ -73,32 +73,20 @@ const constraintSchema = z.discriminatedUnion('type', [
 // カラーコード正規表現（3桁または6桁のHEXカラー）
 const hexColorRegex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 
+// 共通カラースキーマ
+const colorSchema = z
+  .string()
+  .regex(hexColorRegex, '有効なカラーコードを入力してください（例: #FFF, #FFFFFF）')
+  .optional();
+
 // WidgetData型
 const widgetDataSchema = z.object({
   title: z.string().max(200).optional(),
   content: z.string().max(10000).optional(),
   borderStyle: z.enum(['None', 'Plain', 'Rounded', 'Double']).optional(),
-  borderColor: z
-    .string()
-    .regex(
-      hexColorRegex,
-      '有効なカラーコードを入力してください（例: #FFF, #FFFFFF）'
-    )
-    .optional(),
-  textColor: z
-    .string()
-    .regex(
-      hexColorRegex,
-      '有効なカラーコードを入力してください（例: #FFF, #FFFFFF）'
-    )
-    .optional(),
-  backgroundColor: z
-    .string()
-    .regex(
-      hexColorRegex,
-      '有効なカラーコードを入力してください（例: #FFF, #FFFFFF）'
-    )
-    .optional(),
+  borderColor: colorSchema,
+  textColor: colorSchema,
+  backgroundColor: colorSchema,
   items: z.array(z.string()).optional(),
   headers: z.array(z.string()).optional(),
   rows: z.array(z.array(z.string())).optional(),
